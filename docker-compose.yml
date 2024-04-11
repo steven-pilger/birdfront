@@ -1,0 +1,46 @@
+services:
+  frontend:
+    build:
+      context: frontend
+    image: frontend:latest
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/frontend
+      - /frontend/node_modules
+    ports:
+      - ${FRONTEND_PORT}:80
+
+  api:
+    build:
+      context: api
+    image: api:latest
+    restart: unless-stopped
+    volumes:
+      - ./worker/database:/database
+      - ./api:/work
+    ports:
+      - ${API_PORT}:80
+    environment:
+      - API_ROOT_PATH=${API_ROOT_PATH}
+      - FLICKR_API_TOKEN=${FLICKR_API_TOKEN}
+
+  analyzer:
+    build:
+      context: worker
+    image: worker:latest
+    command: "python analyzer.py"
+    restart: unless-stopped
+    volumes:
+      - ./worker/recorder:/recorder
+      - ./worker/database:/database
+
+  recorder:
+    build:
+      context: worker
+    image: worker:latest
+    command: "python recorder.py"
+    restart: unless-stopped
+    devices:
+      - /dev/snd
+    volumes:
+      - ./worker/recorder:/recorder
