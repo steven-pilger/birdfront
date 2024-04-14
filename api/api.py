@@ -4,6 +4,7 @@ import lzma
 import os
 from pathlib import Path
 from urllib.parse import quote_plus
+from datetime import datetime
 
 import requests
 from fastapi import FastAPI
@@ -46,8 +47,6 @@ db_engine = create_engine("sqlite:////database/birds.db")
 async def startup():
     FastAPICache.init(InMemoryBackend())
 
-
-where_date_today = "WHERE recording_date >= datetime('now', 'start of day')"
 
 NOT_BIRDS = [
     "Acris crepitans_Northern Cricket Frog",
@@ -158,6 +157,11 @@ NOT_BIRDS_COMMON = [not_bird.split("_")[1] for not_bird in NOT_BIRDS]
 
 @app.get("/stats")
 async def get_stats() -> JSONResponse:
+    date = datetime.now().strftime("%Y-%m-%d")
+    where_date_today = (
+        f"WHERE strftime('%Y-%m-%d', datetime(recording_date, 'unixepoch')) = '{date}'"
+    )
+
     with db_engine.connect() as conn:
         query = text(
             f"SELECT COUNT(*) FROM birds {where_date_today} AND confidence >= 0.7"
@@ -192,8 +196,6 @@ async def get_stats() -> JSONResponse:
 
 @app.get("/detections")
 async def get_detections(date=False) -> JSONResponse:
-    from datetime import datetime
-
     if not date:
         date = datetime.now().strftime("%Y-%m-%d")
     else:
@@ -203,6 +205,7 @@ async def get_detections(date=False) -> JSONResponse:
     date_select = (
         f"strftime('%Y-%m-%d', datetime(recording_date, 'unixepoch')) = '{date}'"
     )
+    print(date_select)
 
     with db_engine.connect() as conn:
         scientific_names_str = ", ".join([f'"{name}"' for name in NOT_BIRDS_SCIENTIFIC])
