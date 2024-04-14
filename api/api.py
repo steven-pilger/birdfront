@@ -1,4 +1,5 @@
 import json
+import logging
 import lzma
 import os
 from pathlib import Path
@@ -12,6 +13,16 @@ from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
 from fastapi_cache.decorator import cache
 from sqlalchemy import create_engine, text
+
+
+log_level = os.environ.get("LOG_LEVEL", "INFO")
+logger = logging.getLogger(os.path.basename(__file__))
+logger.setLevel(logging.getLevelName(log_level))
+handler = logging.StreamHandler()
+handler.setFormatter(
+    logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+)
+logger.addHandler(handler)
 
 api_root = os.environ.get("API_ROOT_PATH")
 app = FastAPI(root_path=api_root)
@@ -184,12 +195,14 @@ async def get_detections(date=False) -> JSONResponse:
     from datetime import datetime
 
     if not date:
-        date = "'now'"
+        date = datetime.now().strftime("%Y-%m-%d")
     else:
         year, month, day = [int(x) for x in date.split("-")]
-        timestamp = int(datetime(year, month, day).timestamp())
-        date = f"{timestamp}, 'unixepoch'"
-    date_select = f"recording_date BETWEEN datetime({date}, 'start of day') AND datetime({date}, '+1 day', 'start of day')"
+        date = datetime(year, month, day)
+        date = date.strftime("%Y-%m-%d")
+    date_select = (
+        f"strftime('%Y-%m-%d', datetime(recording_date, 'unixepoch')) = '{date}'"
+    )
 
     with db_engine.connect() as conn:
         scientific_names_str = ", ".join([f'"{name}"' for name in NOT_BIRDS_SCIENTIFIC])
@@ -197,7 +210,7 @@ async def get_detections(date=False) -> JSONResponse:
         SELECT
             scientific_name,
             common_name,
-            strftime('%Y-%m-%dT%H:%M:%SZ',recording_date) AS hour,
+            strftime('%Y-%m-%dT%H:%M:%SZ', datetime(recording_date, 'unixepoch')) AS hour,
             COUNT(*) AS recordings_count
         FROM
             birds
@@ -215,7 +228,7 @@ async def get_detections(date=False) -> JSONResponse:
                 LIMIT 10
             )
         GROUP BY
-            scientific_name, strftime('%Y-%m-%d%H',recording_date)
+            scientific_name, strftime('%Y-%m-%d%H', datetime(recording_date, 'unixepoch'))
         ORDER BY
             recordings_count DESC;
         """
@@ -238,7 +251,7 @@ async def get_most_recent(n: int = 1) -> JSONResponse:
     with db_engine.connect() as conn:
         scientific_names_str = ", ".join([f'"{name}"' for name in NOT_BIRDS_SCIENTIFIC])
         query = text(
-            f"SELECT * FROM birds WHERE scientific_name NOT IN ({scientific_names_str}) AND confidence >= 0.7 ORDER BY recording_date DESC LIMIT {n};"
+            f"SELECT * FROM birds WHERE scientific_name NOT IN ({scientific_names_str}) AND confidence >= 0.7 ORDER BY id DESC LIMIT {n};"
         )
         if n > 1:
             most_recent = conn.execute(query).fetchall()
@@ -270,9 +283,12 @@ async def get_spectrogram(id: int = 1) -> JSONResponse:
         file_name += ".json.xz"
         file_path = Path("/database", file_name)
 
-        with lzma.open(file_path, 'rt', encoding='UTF-8') as f:
-            data = json.load(f)
-        return JSONResponse(data)
+        try:
+            with lzma.open(file_path, "rt", encoding="UTF-8") as f:
+                data = json.load(f)
+            return JSONResponse(data)
+        except FileNotFoundError:
+            logger.warning(f"{file_path} was not found on disk.")
 
 
 @app.get("/birdimage")

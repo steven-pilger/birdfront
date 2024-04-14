@@ -39,6 +39,9 @@ export function plotBars(detectionsData){
 }
 
 export function plotCells(detectionsData){
+  if (!detectionsData.length > 0){
+    return
+  }
   const selectedDate = new Date(detectionsData[0].datetime); // Replace '2024-04-07' with your selected date
   const arraydate = createDateArray(selectedDate)
   return Plot.plot({

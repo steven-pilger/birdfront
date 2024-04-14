@@ -17,6 +17,9 @@ handler.setFormatter(
 logger.addHandler(handler)
 
 
+RECORDING_LENGTH = 15
+
+
 def log_subprocess_output(pipe):
     for line in iter(pipe.readline, b""):  # b'\n'-separated lines
         logger.info(line)
@@ -27,24 +30,11 @@ def run_recording():
     tmp_path = f"/tmp/{file_name}"
     fin_path = f"/recorder/{file_name}"
     logger.info(f"Recording: {file_name}")
-    command = f"arecord -D hw:1 -f S16_LE -c1 -r44100 -d 15 {tmp_path}".split(' ')
-    # command = [
-    #     "ffmpeg",
-    #     "-hide_banner",
-    #     "-f",
-    #     "alsa",
-    #     "-i",
-    #     "default",
-    #     "-t",
-    #     "15",
-    #     "-c",
-    #     "libmp3lame",
-    #     "-q:a",
-    #     "4",
-    #     "-loglevel",
-    #     "panic",
-    #     tmp_path,
-    # ]
+    command = (
+        f"arecord -D hw:1 -f S16_LE -c1 -r44100 -d {RECORDING_LENGTH} {tmp_path}".split(
+            " "
+        )
+    )
     process = subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
@@ -53,6 +43,7 @@ def run_recording():
     exitcode = process.wait()
     subprocess.run(["mv", tmp_path, fin_path])
     sys.exit(exitcode)
+
 
 # Sleep initially to wait for the analyzer to come up.
 sleep(30)
@@ -63,6 +54,6 @@ while True:
     thread = threading.Thread(target=run_recording)
     thread.start()
     logger.info("Sleeping...")
-    
+
     # Sleep one second longer than recording to ensure the audio device is free.
-    sleep(16)
+    sleep(RECORDING_LENGTH + 1)

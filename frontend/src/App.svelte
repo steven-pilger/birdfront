@@ -4,6 +4,15 @@
   import { plotBars, plotCells, plotSpectrogram } from './plots.js'
   import { DateInput } from 'date-picker-svelte'
 
+  function tsToDateString(timestamp){
+    console.log(timestamp)
+    const d = new Date(timestamp * 1000)
+    console.log(d)
+    return (
+      d.toLocaleString()
+    );
+  }
+
   let data, barDiv, cellDiv, specDiv;
 
   $: {
@@ -53,7 +62,7 @@
         <div id="common_name">{$mostRecentStore[0]?.common_name}</div>
         <div id="scientific_name">{$mostRecentStore[0]?.scientific_name}</div>
         <div id="confidence">Sicherheit: {($mostRecentStore[0]?.confidence * 100).toFixed(1)} %</div>
-        <div id="recording_date">Datum: {$mostRecentStore[0]?.recording_date}</div>
+        <div id="recording_date">Datum: {tsToDateString($mostRecentStore[0]?.recording_date)}</div>
         {#if $spectrogramStore}
           <div id="spectrogram" class="plotStyles" bind:this={specDiv} role="img"></div>
         {:else}
@@ -90,7 +99,8 @@
     text-align: center;
   }
   #most_recent {
-    height: 500px;
+    height: 100px;
+    /* height: 500px; */
     display: grid;
     grid-template-areas:
         "image common_name"

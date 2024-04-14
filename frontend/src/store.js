@@ -78,11 +78,12 @@ async function updateMostRecent(){
   await fetchMostRecent(6).then(res => {
       mostRecentStore.set(res)
       return res[0]
-  }).then(mostRecent => {
-    fetchSpectrogram(mostRecent?.id).then(specData =>{
-      spectrogramStore.set(specData)
-    }).catch()
   })
+  //   .then(mostRecent => {
+  //   fetchSpectrogram(mostRecent?.id).then(specData =>{
+  //     spectrogramStore.set(specData)
+  //   }).catch()
+  // })
 }
 
 async function fetchOverviewData(date){
