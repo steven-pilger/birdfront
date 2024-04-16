@@ -169,7 +169,7 @@ async def get_stats() -> JSONResponse:
         count_today = conn.execute(query).fetchone()[0]
 
         query = text(
-            "SELECT COUNT(*) FROM birds WHERE recording_date >= datetime('now', '-1 hour') AND confidence >= 0.7"
+            "SELECT COUNT(*) FROM birds WHERE datetime(recording_date, 'unixepoch') >= datetime('now', '-1 hour') AND confidence >= 0.7"
         )
         count_last_hour = conn.execute(query).fetchone()[0]
 
