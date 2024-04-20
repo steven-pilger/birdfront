@@ -8,8 +8,9 @@ from datetime import datetime
 
 import requests
 from fastapi import FastAPI
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, ORJSONResponse
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
 from fastapi_cache.decorator import cache
@@ -39,6 +40,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 db_engine = create_engine("sqlite:////database/birds.db")
 
@@ -277,7 +279,7 @@ async def get_most_recent(n: int = 1) -> JSONResponse:
         return JSONResponse(response)
 
 
-@app.get("/spectrogram")
+@app.get("/spectrogram", response_class=ORJSONResponse)
 @cache(expire=15)
 async def get_spectrogram(id: int = 1) -> JSONResponse:
     with db_engine.connect() as conn:
@@ -289,13 +291,13 @@ async def get_spectrogram(id: int = 1) -> JSONResponse:
         try:
             with lzma.open(file_path, "rt", encoding="UTF-8") as f:
                 data = json.load(f)
-            return JSONResponse(data)
+            return ORJSONResponse(data)
         except FileNotFoundError:
             logger.warning(f"{file_path} was not found on disk.")
 
 
 @app.get("/birdimage")
-@cache(expire=3600)
+@cache(expire=60 * 60 * 24)
 async def get_bird_image(scientific_name) -> JSONResponse:
     token = os.environ.get("FLICKR_API_TOKEN")
     URL_SEARCH = f"https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key={token}&text={quote_plus(scientific_name)}&safe_search=&format=json&nojsoncallback=1&extras=url_sq"

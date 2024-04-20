@@ -28,7 +28,7 @@ logger.addHandler(handler)
 
 def save_spectrogram_json(path):
     y, _ = librosa.load(path)
-    hop_length = 1024
+    hop_length = 4096
 
     D = librosa.amplitude_to_db(
         np.abs(librosa.stft(y, hop_length=hop_length)), ref=np.max
@@ -36,7 +36,7 @@ def save_spectrogram_json(path):
     data = []
     for y, values in enumerate(D):
         for x, value in enumerate(values):
-            data.append({"x": x, "y": y, "fill": float(value)})
+            data.append({"x": x, "y": y, "fill": round(float(value), 1)})
 
     filename = os.path.basename(path)
     json_path = Path("/recorder", filename + ".json.xz")
