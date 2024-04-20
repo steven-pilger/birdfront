@@ -93,18 +93,45 @@ def extract_highest_confidence(recording):
     return max(recording.detections, key=lambda x: x["confidence"])
 
 
+def make_species_folder(species: str):
+    species_path = Path(f"/database/{species}")
+    os.makedirs(species_path, exist_ok=True)
+
+
+def delete_old_files(directory, extensions=None):
+    file_list = os.listdir(directory)
+
+    # Filter out files that do not match the given extensions
+    if extensions is not None:
+        filtered_file_list = [f for f in file_list if f.endswith(tuple(extensions))]
+    else:
+        filtered_file_list = file_list
+
+    # Sort the filtered files by creation date
+    sorted_file_list = sorted(filtered_file_list, key=os.path.getctime)
+
+    # Delete all files except for the newest 5
+    for i in range(len(sorted_file_list) - 5, len(sorted_file_list)):
+        os.remove(os.path.join(directory, sorted_file_list[i]))
+
+
 def on_analyze_complete(recording):
     logger.info(recording.path)
     if recording.detections:
         highest_confidence = extract_highest_confidence(recording)
+        species = highest_confidence["scientific_name"].replace(" ", "_")
+        make_species_folder(species)
         logger.info(highest_confidence)
         logger.info("Writing to database.")
         add_detection_to_database(recording.path, highest_confidence)
         logger.info("Generating spectrogram data.")
         save_spectrogram_json(recording.path)
         logger.info("Moving file from recorder to database folder.")
-        subprocess.run(["mv", recording.path, "/database/."])
-        subprocess.run(["mv", recording.path + ".json.xz", "/database/."])
+        species_database_dir = f"/database/{species}"
+        subprocess.run(["mv", recording.path, species_database_dir + "/."])
+        subprocess.run(["mv", recording.path + ".json.xz", species_database_dir + "/."])
+        delete_old_files(species_database_dir, "mp3")
+        delete_old_files(species_database_dir, "xz")
     else:
         logger.info("No detections, removing file.")
         subprocess.run(["rm", "-f", recording.path])
