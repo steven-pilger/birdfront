@@ -98,17 +98,15 @@ def make_species_folder(species: str):
     os.makedirs(species_path, exist_ok=True)
 
 
-def delete_old_files(directory, extensions=None):
-    file_list = os.listdir(directory)
-
-    # Filter out files that do not match the given extensions
-    if extensions is not None:
-        filtered_file_list = [f for f in file_list if f.endswith(tuple(extensions))]
-    else:
-        filtered_file_list = file_list
+def delete_old_files(directory, extension=None):
+    p = Path(directory)
+    pattern = "**/*"
+    if extension:
+        pattern += extension
+    file_list = list(p.glob(pattern))
 
     # Sort the filtered files by creation date
-    sorted_file_list = sorted(filtered_file_list, key=os.path.getctime)
+    sorted_file_list = sorted(file_list, key=os.path.getctime)
 
     # Delete all files except for the newest 5
     for i in range(len(sorted_file_list) - 5, len(sorted_file_list)):
