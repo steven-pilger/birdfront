@@ -1,3 +1,13 @@
+### Valid List of Birds for your Location
+
+- Go to this database and select your region and desired other second language:
+https://avibase.bsc-eoc.org/checklist.jsp?lang=EN&p2=1&list=clements&synlang=DE&region=DE&version=text&lifelist=&highlight=0
+
+- Highlight the table and paste it into a text file called labels_avibase.txt.
+
+- Run the below command to construct a valid list of labels for birdnetlib:
+`cut -d \t -f 2,3 labels_avibase.txt | awk NF | rg -v -e ':' | sed 's/\t/_/g' > custom_species_list.txt`
+
 ### Dev
 
 - Run the frontend with `yarn dev` while in frontend directory.
@@ -19,7 +29,7 @@ FLICK_API_TOKEN=your_token_here
 
 API_ROOT_PATH=/api
 # Specify the full API URL here.
-API_URL=https://birdfron.com/api
+API_URL=https://birdfront.com/api
 ```
 
 Adjust the CORS origins in `api/api.py`.

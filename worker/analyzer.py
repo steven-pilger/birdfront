@@ -212,6 +212,7 @@ class CustomDirectoryWatcher(DirectoryWatcher):
                 self.recording_preanalyze(recording)
                 recording.analyze()
                 recordings.append(recording)
+                recording.extract_detections_as_audio(directory="extractions")
                 self.on_analyze_complete(recording)
             except BaseException as error:
                 self.on_error(recording, error)
@@ -219,6 +220,9 @@ class CustomDirectoryWatcher(DirectoryWatcher):
 
 
 if __name__ == "__main__":
+    # Create extractions dir.
+    os.makedirs("extractions", exist_ok=True)
+
     with contextlib.redirect_stdout(OutputLogger(logger=logger)):
         # Load and initialize the BirdNET-Analyzer models.
         custom_model_path = "model.tflite"
@@ -227,14 +231,16 @@ if __name__ == "__main__":
         analyzer = Analyzer(
             classifier_labels_path=custom_labels_path,
             classifier_model_path=custom_model_path,
+            custom_species_list_path="/custom_species_list.txt",
         )
 
         directory = "/recorder"
         watcher = CustomDirectoryWatcher(
             directory,
             analyzers=[analyzer],
-            lat=50.0543,
-            lon=7.7453,
+            # Was not successful in getting lat and lon to work correctly.
+            # lat=50.0543,
+            # lon=7.7453,
             date=datetime.today(),
             min_conf=0.3,
             use_polling=True,

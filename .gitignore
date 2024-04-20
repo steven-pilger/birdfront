@@ -264,3 +264,4 @@ package
 *birds.db*
 *.mp3
 *.mp3.json.xz
+/worker/custom_species_list.txt

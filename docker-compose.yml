@@ -33,6 +33,7 @@ services:
     volumes:
       - ./worker/recorder:/recorder
       - ./worker/database:/database
+      - ./worker/custom_species_list.txt:/custom_species_list.txt
 
   recorder:
     build:
