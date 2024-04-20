@@ -5,9 +5,7 @@
   import { DateInput } from 'date-picker-svelte'
 
   function tsToDateString(timestamp){
-    console.log(timestamp)
     const d = new Date(timestamp * 1000)
-    console.log(d)
     return (
       d.toLocaleString()
     );

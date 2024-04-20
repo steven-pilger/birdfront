@@ -207,7 +207,6 @@ async def get_detections(date=False) -> JSONResponse:
     date_select = (
         f"strftime('%Y-%m-%d', datetime(recording_date, 'unixepoch')) = '{date}'"
     )
-    print(date_select)
 
     with db_engine.connect() as conn:
         scientific_names_str = ", ".join([f'"{name}"' for name in NOT_BIRDS_SCIENTIFIC])

@@ -11,6 +11,8 @@ from pathlib import Path
 
 import librosa
 import numpy as np
+import soundfile as sf
+from scipy import signal
 from birdnetlib import Recording
 from birdnetlib.analyzer import Analyzer
 from birdnetlib.watcher import DirectoryWatcher
@@ -172,6 +174,21 @@ class CustomDirectoryWatcher(DirectoryWatcher):
     def __init__(self, *args, is_predicted_for_location_and_date=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.is_predicted_for_location_and_date = is_predicted_for_location_and_date
+
+    def recording_preanalyze(self, recording):
+        logger.info("Low-pass filtering recording.")
+        y, sr = librosa.load(recording.path)
+        y = librosa.util.normalize(y)
+
+        cutoff_high = 500  # Hz
+        order = 2
+
+        # Create a Filter using SciPy's Signal module
+        b1, a1 = signal.butter(order, cutoff_high / (sr / 2), "high")
+
+        # Apply the filter to the audio signal
+        y = signal.lfilter(b1, a1, y)
+        sf.write(recording.path, y, sr, format="mp3")
 
     def _on_closed(self, event):
         # Detect for this file.
