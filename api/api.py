@@ -284,9 +284,11 @@ async def get_most_recent(n: int = 1) -> JSONResponse:
 async def get_spectrogram(id: int = 1) -> JSONResponse:
     with db_engine.connect() as conn:
         query = text(f"SELECT * FROM birds WHERE id = {id}")
-        file_name = conn.execute(query).fetchone()[2]
+        row = conn.execute(query).fetchone()
+        species_name = row[5].replace(" ", "_")
+        file_name = row[2]
         file_name += ".json.xz"
-        file_path = Path("/database", file_name)
+        file_path = Path("/database", species_name, file_name)
 
         try:
             with lzma.open(file_path, "rt", encoding="UTF-8") as f:

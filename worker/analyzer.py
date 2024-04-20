@@ -109,8 +109,9 @@ def delete_old_files(directory, extension=None):
     sorted_file_list = sorted(file_list, key=os.path.getctime)
 
     # Delete all files except for the newest 5
-    for i in range(len(sorted_file_list) - 5, len(sorted_file_list)):
-        os.remove(os.path.join(directory, sorted_file_list[i]))
+    if len(sorted_file_list) > 5:
+        for i in range(len(sorted_file_list) - 5, len(sorted_file_list)):
+            os.remove(os.path.join(directory, sorted_file_list[i]))
 
 
 def on_analyze_complete(recording):
