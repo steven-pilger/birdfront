@@ -69,22 +69,22 @@ def add_detection_to_database(path, highest_confidence):
             "CREATE TABLE birds (id INTEGER PRIMARY KEY, recording_date DATETIME, filename TEXT, confidence REAL, common_name TEXT, scientific_name TEXT);"
         )
 
-    # if highest_confidence["is_predicted_for_location_and_date"]:
-    c.execute(
-        "INSERT INTO birds VALUES (?, ?, ?, ?, ?, ?)",
-        (
-            None,
-            timestamp,
-            filename,
-            highest_confidence["confidence"],
-            highest_confidence["common_name"],
-            highest_confidence["scientific_name"],
-        ),
-    )
-    # else:
-    #     logger.info(
-    #         f"Detection not expected for location and/or date: {highest_confidence}"
-    #     )
+    if highest_confidence["is_predicted_for_location_and_date"]:
+        c.execute(
+            "INSERT INTO birds VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                None,
+                timestamp,
+                filename,
+                highest_confidence["confidence"],
+                highest_confidence["common_name"],
+                highest_confidence["scientific_name"],
+            ),
+        )
+    else:
+        logger.info(
+            f"Detection not expected for location and/or date: {highest_confidence}"
+        )
 
     # Commit the changes and close the cursor
     conn.commit()
@@ -100,7 +100,7 @@ def make_species_folder(species: str):
     os.makedirs(species_path, exist_ok=True)
 
 
-def delete_old_files(directory, extension=None):
+def delete_old_files(directory, extension=None, num_to_keep=5):
     p = Path(directory)
     pattern = "**/*"
     if extension:
@@ -111,8 +111,8 @@ def delete_old_files(directory, extension=None):
     sorted_file_list = sorted(file_list, key=os.path.getctime)
 
     # Delete all files except for the newest 5
-    if len(sorted_file_list) > 5:
-        for i in range(len(sorted_file_list) - 5, len(sorted_file_list)):
+    if len(sorted_file_list) > num_to_keep:
+        for i in range(len(sorted_file_list) - num_to_keep, len(sorted_file_list)):
             os.remove(os.path.join(directory, sorted_file_list[i]))
 
 
@@ -133,6 +133,7 @@ def on_analyze_complete(recording):
         subprocess.run(["mv", recording.path + ".json.xz", species_database_dir + "/."])
         delete_old_files(species_database_dir, "mp3")
         delete_old_files(species_database_dir, "xz")
+        delete_old_files("/extractions", num_to_keep=30)
     else:
         logger.info("No detections, removing file.")
         subprocess.run(["rm", "-f", recording.path])
