@@ -82,9 +82,7 @@ def add_detection_to_database(path, highest_confidence):
             ),
         )
     else:
-        logger.info(
-            f"Detection not expected for location and/or date: {highest_confidence}"
-        )
+        logger.info("Detection not expected for location and/or date.")
 
     # Commit the changes and close the cursor
     conn.commit()
